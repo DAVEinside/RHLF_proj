@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Human-Aligned AI Content Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+        .header {
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e5e5e5;
+            margin-bottom: 2rem;
+        }
+        .content-display {
+            white-space: pre-wrap;
+            margin-top: 1rem;
+            padding: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+            background-color: #f8f9fa;
+            min-height: 200px;
+        }
+        .evaluation-result {
+            margin-top: 1rem;
+            padding: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+        }
+        .score-high {
+            color: #28a745;
+        }
+        .score-medium {
+            color: #ffc107;
+        }
+        .score-low {
+            color: #dc3545;
+        }
+        .values-card {
+            margin-bottom: 1rem;
+        }
+        .loading {
+            display: none;
+            margin-top: 1rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Human-Aligned AI Content Generator</h1>
+            <p class="lead">Generate content that follows specific human values and ethical guidelines</p>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Generate Content</h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="generateForm">
+                            <div class="mb-3">
+                                <label for="promptInput" class="form-label">Prompt:</label>
+                                <textarea class="form-control" id="promptInput" rows="4" placeholder="Enter your prompt here (e.g., 'Write a blog post about sustainable technology')"></textarea>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="contentTypeSelect" class="form-label">Content Type:</label>
+                                    <select class="form-select" id="contentTypeSelect">
+                                        <option value="">Auto-detect</option>
+                                        <option value="blog post">Blog Post</option>
+                                        <option value="social media post">Social Media Post</option>
+                                        <option value="email">Email</option>
+                                        <option value="article">Article</option>
+                                        <option value="product description">Product Description</option>
+                                        <option value="report">Report</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="temperatureSlider" class="form-label">Creativity (Temperature): <span id="temperatureValue">0.7</span></label>
+                                    <input type="range" class="form-range" min="0" max="1" step="0.1" value="0.7" id="temperatureSlider">
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">Generate Content</button>
+                        </form>
+                        
+                        <div class="loading" id="loadingIndicator">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p>Generating content...</p>
+                        </div>
+                        
+                        <div class="content-display" id="contentDisplay" style="display: none;"></div>
+                        
+                        <div class="evaluation-result" id="evaluationResult" style="display: none;">
+                            <h3>Content Evaluation</h3>
+                            <div id="overallScore"></div>
+                            <h4 class="mt-3">Metric Scores:</h4>
+                            <div id="metricScores"></div>
+                        </div>
+                        
+                        <div class="mt-3" id="feedbackSection" style="display: none;">
+                            <h3>Provide Feedback</h3>
+                            <form id="feedbackForm">
+                                <input type="hidden" id="contentId">
+                                <div class="mb-3">
+                                    <label class="form-label">Rating:</label>
+                                    <div class="rating-stars">
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="rating" id="rating1" value="1">
+                                            <label class="form-check-label" for="rating1">1</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="rating" id="rating2" value="2">
+                                            <label class="form-check-label" for="rating2">2</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="rating" id="rating3" value="3">
+                                            <label class="form-check-label" for="rating3">3</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="rating" id="rating4" value="4">
+                                            <label class="form-check-label" for="rating4">4</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="rating" id="rating5" value="5" checked>
+                                            <label class="form-check-label" for="rating5">5</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="feedbackText" class="form-label">Comments (optional):</label>
+                                    <textarea class="form-control" id="feedbackText" rows="3" placeholder="What did you like or dislike about the generated content?"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-secondary">Submit Feedback</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card values-card">
+                    <div class="card-header">
+                        <h2>Human Values & Guidelines</h2>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            {% for key, value in values.items() %}
+                            <li class="list-group-item">
+                                <strong>{{ key|replace('_', ' ')|title }}:</strong> {{ value }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Evaluation Metrics</h2>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            {% for metric in metrics %}
+                            <li class="list-group-item">{{ metric|replace('_', ' ')|title }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Update temperature value display
+        document.getElementById('temperatureSlider').addEventListener('input', function() {
+            document.getElementById('temperatureValue').textContent = this.value;
+        });
+        
+        // Handle form submission
+        document.getElementById('generateForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            // Get form values
+            const prompt = document.getElementById('promptInput').value;
+            const contentType = document.getElementById('contentTypeSelect').value;
+            const temperature = parseFloat(document.getElementById('temperatureSlider').value);
+            
+            // Validate prompt
+            if (!prompt.trim()) {
+                alert('Please enter a prompt.');
+                return;
+            }
+            
+            // Show loading indicator
+            document.getElementById('loadingIndicator').style.display = 'block';
+            document.getElementById('contentDisplay').style.display = 'none';
+            document.getElementById('evaluationResult').style.display = 'none';
+            document.getElementById('feedbackSection').style.display = 'none';
+            
+            // Send request to API
+            fetch('/api/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    prompt: prompt,
+                    content_type: contentType,
+                    temperature: temperature
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hide loading indicator
+                document.getElementById('loadingIndicator').style.display = 'none';
+                
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    return;
+                }
+                
+                // Display content
+                const contentDisplay = document.getElementById('contentDisplay');
+                contentDisplay.textContent = data.content;
+                contentDisplay.style.display = 'block';
+                
+                // Store content ID for feedback
+                document.getElementById('contentId').value = data.content_id || 'temp-id';
+                
+                // Display evaluation results
+                if (data.evaluation) {
+                    displayEvaluation(data.evaluation);
+                }
+                
+                // Show feedback section
+                document.getElementById('feedbackSection').style.display = 'block';
+            })
+            .catch(error => {
+                document.getElementById('loadingIndicator').style.display = 'none';
+                alert('Error: ' + error.message);
+            });
+        });
+        
+        // Handle feedback submission
+        document.getElementById('feedbackForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            // Get form values
+            const contentId = document.getElementById('contentId').value;
+            const ratingInput = document.querySelector('input[name="rating"]:checked');
+            const rating = ratingInput ? parseInt(ratingInput.value) : 5;
+            const feedbackText = document.getElementById('feedbackText').value;
+            
+            // Send feedback to API
+            fetch('/api/feedback', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    content_id: contentId,
+                    rating: rating,
+                    feedback_text: feedbackText
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    return;
+                }
+                
+                alert('Thank you for your feedback!');
+                document.getElementById('feedbackForm').reset();
+            })
+            .catch(error => {
+                alert('Error: ' + error.message);
+            });
+        });
+        
+        // Display evaluation results
+        function displayEvaluation(evaluation) {
+            const evaluationResult = document.getElementById('evaluationResult');
+            const overallScore = document.getElementById('overallScore');
+            const metricScores = document.getElementById('metricScores');
+            
+            // Display overall score
+            const overallValue = evaluation.overall_score.toFixed(2);
+            let scoreClass = getScoreClass(evaluation.overall_score);
+            overallScore.innerHTML = `<h4>Overall Score: <span class="${scoreClass}">${overallValue}/10</span></h4>`;
+            
+            // Display metric scores
+            metricScores.innerHTML = '';
+            
+            for (const [metric, data] of Object.entries(evaluation.metrics)) {
+                const score = data.score.toFixed(2);
+                const explanation = data.explanation || '';
+                
+                // Format metric name
+                const metricName = metric.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                
+                // Determine score class
+                scoreClass = getScoreClass(data.score);
+                
+                // Create metric score element
+                const metricElement = document.createElement('div');
+                metricElement.classList.add('mb-2');
+                metricElement.innerHTML = `
+                    <div><strong>${metricName}:</strong> <span class="${scoreClass}">${score}/10</span></div>
+                    <div class="small text-muted">${explanation}</div>
+                `;
+                
+                metricScores.appendChild(metricElement);
+            }
+            
+            evaluationResult.style.display = 'block';
+        }
+        
+        // Get CSS class based on score
+        function getScoreClass(score) {
+            if (score >= 7) {
+                return 'score-high';
+            } else if (score >= 5) {
+                return 'score-medium';
+            } else {
+                return 'score-low';
+            }
+        }
+    </script>
+</body>
+</html>

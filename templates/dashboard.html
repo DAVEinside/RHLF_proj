@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Human-Aligned AI Content Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <style>
+        .metric-card {
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+        
+        .metric-title {
+            font-size: 1rem;
+            color: #6c757d;
+        }
+        
+        .chart-container {
+            margin-bottom: 2rem;
+            background: #fff;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+        }
+        
+        .feedback-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .sidebar {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            height: 100vh;
+            position: fixed;
+        }
+        
+        .sidebar .nav-link {
+            color: #ecf0f1;
+            margin-bottom: 0.5rem;
+            border-radius: 0.3rem;
+            padding: 0.8rem 1rem;
+        }
+        
+        .sidebar .nav-link:hover {
+            background-color: #34495e;
+        }
+        
+        .sidebar .nav-link.active {
+            background-color: #3498db;
+        }
+        
+        .sidebar .nav-link i {
+            margin-right: 0.5rem;
+        }
+        
+        .content-wrapper {
+            margin-left: 240px;
+            padding: 2rem;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: static;
+            }
+            
+            .content-wrapper {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 sidebar py-4">
+                <h1 class="h5 mb-4 text-center">AI Content Generator</h1>
+                <nav class="nav flex-column">
+                    <a class="nav-link active" href="#overview"><i class="bi bi-house-door"></i> Overview</a>
+                    <a class="nav-link" href="#feedback"><i class="bi bi-chat-square-text"></i> Feedback</a>
+                    <a class="nav-link" href="#evaluation"><i class="bi bi-bar-chart"></i> Evaluation</a>
+                    <a class="nav-link" href="#rlhf"><i class="bi bi-arrow-repeat"></i> RLHF Status</a>
+                    <a class="nav-link" href="#settings"><i class="bi bi-gear"></i> Settings</a>
+                    <a class="nav-link" href="/"><i class="bi bi-box-arrow-left"></i> Back to Generator</a>
+                </nav>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="col-md-10 content-wrapper">
+                <h1 class="mb-4">Dashboard</h1>
+                
+                <!-- Overview Section -->
+                <section id="overview" class="mb-5">
+                    <h2 class="mb-4">Overview</h2>
+                    
+                    <div class="row">
+                        <!-- Content Generation Metric -->
+                        <div class="col-md-3 mb-4">
+                            <div class="card metric-card bg-light">
+                                <div class="card-body text-center p-4">
+                                    <div class="metric-value text-primary">{{ metrics.content_generations }}</div>
+                                    <div class="metric-title">Content Generations</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Feedback Metric -->
+                        <div class="col-md-3 mb-4">
+                            <div class="card metric-card bg-light">
+                                <div class="card-body text-center p-4">
+                                    <div class="metric-value text-success">{{ metrics.feedback_count }}</div>
+                                    <div class="metric-title">Feedback Collected</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Average Rating Metric -->
+                        <div class="col-md-3 mb-4">
+                            <div class="card metric-card bg-light">
+                                <div class="card-body text-center p-4">
+                                    <div class="metric-value text-info">{{ metrics.avg_rating }}/5</div>
+                                    <div class="metric-title">Average Rating</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Model Status -->
+                        <div class="col-md-3 mb-4">
+                            <div class="card metric-card bg-light">
+                                <div class="card-body text-center p-4">
+                                    <div class="metric-value">
+                                        {% if metrics.model_status == "healthy" %}
+                                        <i class="bi bi-check-circle-fill text-success"></i>
+                                        {% else %}
+                                        <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="metric-title">Model Status</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Charts -->
+                    <div class="row">
+                        <!-- Content Generation Trend -->
+                        <div class="col-md-6 mb-4">
+                            <div class="chart-container">
+                                <h4>Content Generation Trend</h4>
+                                <canvas id="generationTrendChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Metrics Distribution -->
+                        <div class="col-md-6 mb-4">
+                            <div class="chart-container">
+                                <h4>Evaluation Metrics</h4>
+                                <canvas id="metricsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Feedback Section -->
+                <section id="feedback" class="mb-5">
+                    <h2 class="mb-4">Recent Feedback</h2>
+                    
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="feedback-list">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Content Type</th>
+                                            <th>Rating</th>
+                                            <th>Feedback</th>
+                                            <th>Timestamp</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in feedback %}
+                                        <tr>
+                                            <td>{{ item.id }}</td>
+                                            <td>{{ item.content_type }}</td>
+                                            <td>
+                                                <span class="badge {% if item.rating >= 4 %}bg-success{% elif item.rating >= 3 %}bg-warning{% else %}bg-danger{% endif %}">
+                                                    {{ item.rating }}/5
+                                                </span>
+                                            </td>
+                                            <td>{{ item.feedback_text|truncate(50) }}</td>
+                                            <td>{{ item.timestamp }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Evaluation Section -->
+                <section id="evaluation" class="mb-5">
+                    <h2 class="mb-4">Content Evaluation</h2>
+                    
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <h4>Average Scores by Metric</h4>
+                                <canvas id="metricsBarChart"></canvas>
+                            </div>
+                            
+                            <h4 class="mt-4">Evaluation Trend</h4>
+                            <p>Average overall evaluation score over time</p>
+                            <div class="chart-container">
+                                <canvas id="evaluationTrendChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- RLHF Status Section -->
+                <section id="rlhf" class="mb-5">
+                    <h2 class="mb-4">RLHF Status</h2>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4 class="mb-0">Reward Model</h4>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Status:</strong> {{ rlhf.reward_model.status }}</p>
+                                    <p><strong>Last Trained:</strong> {{ rlhf.reward_model.last_trained }}</p>
+                                    <p><strong>Training Pairs:</strong> {{ rlhf.reward_model.training_pairs }}</p>
+                                    <p><strong>Accuracy:</strong> {{ rlhf.reward_model.accuracy }}%</p>
+                                    
+                                    <div class="d-grid gap-2 mt-3">
+                                        <button class="btn btn-primary" type="button">Train Reward Model</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4 class="mb-0">Fine-Tuning</h4>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Status:</strong> {{ rlhf.fine_tuning.status }}</p>
+                                    <p><strong>Last Fine-Tuned:</strong> {{ rlhf.fine_tuning.last_tuned }}</p>
+                                    <p><strong>Training Samples:</strong> {{ rlhf.fine_tuning.training_samples }}</p>
+                                    <p><strong>Current Model:</strong> {{ rlhf.fine_tuning.current_model }}</p>
+                                    
+                                    <div class="d-grid gap-2 mt-3">
+                                        <button class="btn btn-primary" type="button">Prepare Fine-Tuning Data</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="mb-0">Improvement Suggestions</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Content Type</th>
+                                            <th>Suggestion</th>
+                                            <th>Impact Score</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for suggestion in rlhf.suggestions %}
+                                        <tr>
+                                            <td>{{ suggestion.content_type }}</td>
+                                            <td>{{ suggestion.suggestion }}</td>
+                                            <td>
+                                                <div class="progress">
+                                                    <div class="progress-bar bg-info" role="progressbar" style="width: {{ suggestion.impact_score * 100 }}%" aria-valuenow="{{ suggestion.impact_score * 100 }}" aria-valuemin="0" aria-valuemax="100">{{ suggestion.impact_score }}</div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Sample data for charts
+        const generationData = {
+            labels: {{ generation_dates|tojson }},
+            datasets: [{
+                label: 'Content Generations',
+                data: {{ generation_counts|tojson }},
+                borderColor: '#6c5ce7',
+                backgroundColor: 'rgba(108, 92, 231, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        };
+        
+        const metricsData = {
+            labels: ['Factual Accuracy', 'Ethical Alignment', 'Value Alignment', 'Toxicity', 'Bias', 'Helpfulness', 'Coherence'],
+            datasets: [{
+                label: 'Average Score',
+                data: {{ metrics_averages|tojson }},
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.7)',
+                    'rgba(54, 162, 235, 0.7)',
+                    'rgba(255, 206, 86, 0.7)',
+                    'rgba(75, 192, 192, 0.7)',
+                    'rgba(153, 102, 255, 0.7)',
+                    'rgba(255, 159, 64, 0.7)',
+                    'rgba(45, 252, 164, 0.7)'
+                ],
+                borderWidth: 1
+            }]
+        };
+        
+        const evaluationTrendData = {
+            labels: {{ evaluation_dates|tojson }},
+            datasets: [{
+                label: 'Overall Score',
+                data: {{ evaluation_scores|tojson }},
+                borderColor: '#2ecc71',
+                backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        };
+        
+        // Chart configurations
+        const generationConfig = {
+            type: 'line',
+            data: generationData,
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        };
+        
+        const metricsConfig = {
+            type: 'radar',
+            data: metricsData,
+            options: {
+                responsive: true,
+                scales: {
+                    r: {
+                        min: 0,
+                        max: 10,
+                        ticks: {
+                            stepSize: 2
+                        }
+                    }
+                }
+            }
+        };
+        
+        const metricsBarConfig = {
+            type: 'bar',
+            data: metricsData,
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 10
+                    }
+                }
+            }
+        };
+        
+        const evaluationConfig = {
+            type: 'line',
+            data: evaluationTrendData,
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 10
+                    }
+                }
+            }
+        };
+        
+        // Initialize charts
+        document.addEventListener('DOMContentLoaded', function() {
+            // Generation trend chart
+            new Chart(
+                document.getElementById('generationTrendChart').getContext('2d'),
+                generationConfig
+            );
+            
+            // Metrics radar chart
+            new Chart(
+                document.getElementById('metricsChart').getContext('2d'),
+                metricsConfig
+            );
+            
+            // Metrics bar chart
+            new Chart(
+                document.getElementById('metricsBarChart').getContext('2d'),
+                metricsBarConfig
+            );
+            
+            // Evaluation trend chart
+            new Chart(
+                document.getElementById('evaluationTrendChart').getContext('2d'),
+                evaluationConfig
+            );
+        });
+        
+        // Smooth scrolling for navigation
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (this.getAttribute('href').startsWith('#')) {
+                    e.preventDefault();
+                    
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    
+                    if (targetElement) {
+                        window.scrollTo({
+                            top: targetElement.offsetTop - 20,
+                            behavior: 'smooth'
+                        });
+                        
+                        // Update active state
+                        document.querySelectorAll('.nav-link').forEach(navLink => {
+                            navLink.classList.remove('active');
+                        });
+                        this.classList.add('active');
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
